@@ -18,11 +18,14 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.SortedMap;
 import java.util.TimeZone;
 import java.util.TreeMap;
@@ -45,8 +48,12 @@ import org.eclipse.yasson.serializers.model.CrateInner;
 import org.eclipse.yasson.serializers.model.CrateJsonObjectDeserializer;
 import org.eclipse.yasson.serializers.model.CrateSerializer;
 import org.eclipse.yasson.serializers.model.CrateSerializerWithConversion;
+import org.eclipse.yasson.serializers.model.GenerifiedPersistentBag;
 import org.eclipse.yasson.serializers.model.NumberDeserializer;
 import org.eclipse.yasson.serializers.model.NumberSerializer;
+import org.eclipse.yasson.serializers.model.PersistentBag;
+import org.eclipse.yasson.serializers.model.PersistentBagSerializer;
+import org.eclipse.yasson.serializers.model.PojoWithExtendedList;
 import org.eclipse.yasson.serializers.model.RecursiveDeserializer;
 import org.eclipse.yasson.serializers.model.RecursiveSerializer;
 import org.eclipse.yasson.serializers.model.SimpleAnnotatedSerializedArrayContainer;
@@ -381,6 +388,27 @@ public class SerializersTest {
         pojo = jsonb.fromJson(json, SortedMap.class);
         Assert.assertTrue("Pojo is not of type TreeMap with no strategy", pojo instanceof TreeMap);
         Assert.assertEquals("{\"first\":1,\"second\":2,\"third\":3}", jsonb.toJson(pojo));
+    }
+
+    @Test
+    public void testExtendedListPojo() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        PojoWithExtendedList pojo = new PojoWithExtendedList();
+        PersistentBag integerBag = new PersistentBag();
+        integerBag.add(1);
+        integerBag.add(2);
+        Method setNumbers = PojoWithExtendedList.class.getMethod("setNumbers", List.class);
+        setNumbers.invoke(pojo, integerBag);
+
+        GenerifiedPersistentBag<Number> anotherBag = new GenerifiedPersistentBag<>();
+        anotherBag.add(3);
+        anotherBag.add(4);
+        pojo.setAnotherNumbers(anotherBag);
+
+        JsonbConfig config = new JsonbConfig().withSerializers(new PersistentBagSerializer());
+        Jsonb jsonb = JsonbBuilder.create(config);
+
+        Assert.assertEquals("{\"anotherNumbers\":[\"val: 3\",\"val: 4\"],\"numbers\":[\"val: 1\",\"val: 2\"]}",
+                jsonb.toJson(pojo));
     }
 
     private Box createPojoWithDates() {

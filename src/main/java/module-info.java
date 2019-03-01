@@ -17,6 +17,7 @@ module org.eclipse.yasson {
     requires java.logging;
     requires java.sql;
     requires static java.desktop;
+    requires cdi.api;
     
     exports org.eclipse.yasson;
     provides javax.json.bind.spi.JsonbProvider with org.eclipse.yasson.JsonBindingProvider;
