@@ -12,10 +12,11 @@ install: true
 
 jobs:
   include:
-    - stage: install-yasson
+    - stage: test-yasson
       script: mvn -U -C -Pstaging clean verify
     - stage: run-jmh
       script:
+        - mvn clean install
         - cd yasson-jmh
         - mvn clean install
         - java -jar target/yasson-jmh.jar -t 5 -f 1 -prof stack
