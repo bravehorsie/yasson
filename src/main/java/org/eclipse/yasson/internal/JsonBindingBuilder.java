@@ -60,6 +60,7 @@ public class JsonBindingBuilder implements JsonbBuilder {
 
     @Override
     public Jsonb build() {
+        System.out.println("Yasson: builder created.");
         return new JsonBinding(this);
     }
 }
