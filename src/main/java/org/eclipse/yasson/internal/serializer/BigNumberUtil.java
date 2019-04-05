@@ -21,24 +21,24 @@ import java.math.BigInteger;
  *
  * @author David Kral
  */
-class BigNumberUtil {
+public class BigNumberUtil {
 
-    // 53 means max bit value of number with sign bit included
-    private static final int MAX_BIT_SIZE = 53;
+    // Max bit length for unscaled values
+    private static final int MAX_BIT_LENGTH = 53;
 
-    // Max value for Long. Similar to JavaScript Number.MAX_SAFE_INTEGER (2**53)-1
-    private static final long MAX_JS_SAFE_VALUE = 9007199254740991L;
+    // Max decimal unscaled value (2**53)-1
+    private static final long UNSCALED_MAX_VALUE = 9007199254740991L;
 
-    // Min value for Long. Similar to JavaScript Number.MIN_SAFE_INTEGER -(2**53)+1
-    private static final long MIN_JS_SAFE_VALUE = -9007199254740991L;
+    // Min decimal unscaled value(2**53)+1
+    private static final long UNSCALED_MIN_VALUE = -9007199254740991L;
 
     // -1022 is the lowest range of the exponent
     // more https://en.wikipedia.org/wiki/Exponent_bias
-    private static final int MIN_RANGE = -1022;
+    private static final int MIN_SCALE_VALUE = -1022;
 
     // 1023 is the highest range of the exponent
     // more https://en.wikipedia.org/wiki/Exponent_bias
-    private static final int MAX_RANGE = 1023;
+    private static final int MAX_SCALE_VALUE = 1023;
 
     /**
      * Checks whether the value of {@link BigDecimal} matches format IEEE-754
@@ -46,15 +46,15 @@ class BigNumberUtil {
      * @param value value which is going to be checked
      * @return true if value matches format IEEE-754
      */
-    static boolean isIEEE754(BigDecimal value) {
+    public static boolean isIEEE754(BigDecimal value) {
         //scale of the number
         int scale = value.scale();
         //bit value of number without scale
-        int valBits = value.unscaledValue().abs().bitLength();
+        int unscaledBits = value.unscaledValue().abs().bitLength();
         //bit value of scaled number
-        int intBitsScaled = value.toBigInteger().bitLength();
+        int nonFractionBits = value.toBigInteger().bitLength();
         // Number whose bit length is than 53 or is not in range is considered as non IEEE 754-2008 binary64 compliant
-        return valBits <= MAX_BIT_SIZE && intBitsScaled <= MAX_BIT_SIZE && MIN_RANGE <= scale && scale <= MAX_RANGE;
+        return unscaledBits <= MAX_BIT_LENGTH && nonFractionBits <= MAX_BIT_LENGTH && MIN_SCALE_VALUE <= scale && scale <= MAX_SCALE_VALUE;
     }
 
     /**
@@ -65,7 +65,7 @@ class BigNumberUtil {
      */
     static boolean isIEEE754(BigInteger value) {
         // Number whose bit length is than 53 is considered as non IEEE 754-2008 binary64 compliant
-        return value.abs().bitLength() <= MAX_BIT_SIZE;
+        return value.abs().bitLength() <= MAX_BIT_LENGTH;
     }
 
     /**
@@ -75,7 +75,7 @@ class BigNumberUtil {
      * @return true if value matches format IEEE-754
      */
     static boolean isIEEE754(Long value) {
-        return value >= MIN_JS_SAFE_VALUE && value <= MAX_JS_SAFE_VALUE;
+        return value >= UNSCALED_MIN_VALUE && value <= UNSCALED_MAX_VALUE;
     }
 
 
