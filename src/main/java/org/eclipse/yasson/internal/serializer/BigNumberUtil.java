@@ -27,10 +27,10 @@ public class BigNumberUtil {
     private static final int MAX_BIT_LENGTH = 53;
 
     // Max decimal unscaled value (2**53)-1
-    private static final long UNSCALED_MAX_VALUE = 9007199254740991L;
+    private static final long MAX_UNSCALED_VALUE = 9007199254740991L;
 
-    // Min decimal unscaled value(2**53)+1
-    private static final long UNSCALED_MIN_VALUE = -9007199254740991L;
+    // Min decimal unscaled value -(2**53)+1
+    private static final long MIN_UNSCALED_VALUE = -9007199254740991L;
 
     // -1022 is the lowest range of the exponent
     // more https://en.wikipedia.org/wiki/Exponent_bias
@@ -47,35 +47,33 @@ public class BigNumberUtil {
      * @return true if value matches format IEEE-754
      */
     public static boolean isIEEE754(BigDecimal value) {
-        //scale of the number
-        int scale = value.scale();
-        //bit value of number without scale
-        int unscaledBits = value.unscaledValue().abs().bitLength();
-        //bit value of scaled number
-        int nonFractionBits = value.toBigInteger().bitLength();
-        // Number whose bit length is than 53 or is not in range is considered as non IEEE 754-2008 binary64 compliant
-        return unscaledBits <= MAX_BIT_LENGTH && nonFractionBits <= MAX_BIT_LENGTH && MIN_SCALE_VALUE <= scale && scale <= MAX_SCALE_VALUE;
+        if (value.abs().stripTrailingZeros().unscaledValue().bitLength() > MAX_BIT_LENGTH) {
+            return false;
+        }
+        //Exponent overlaps 11bit
+        return value.doubleValue() != Double.POSITIVE_INFINITY
+                && value.doubleValue() != Double.NEGATIVE_INFINITY;
     }
 
     /**
      * Checks whether the value of {@link BigInteger} matches format IEEE-754
      *
      * @param value value which is going to be checked
-     * @return true if value matches format IEEE-754
+     * @return true if value doesn't loose precision after conversion to double precision IEEE-754
      */
-    static boolean isIEEE754(BigInteger value) {
-        // Number whose bit length is than 53 is considered as non IEEE 754-2008 binary64 compliant
-        return value.abs().bitLength() <= MAX_BIT_LENGTH;
+    public static boolean isIEEE754(BigInteger value) {
+        // Number whose bit length is less or equal to 53 is considered as non IEEE 754-2008 binary64 compliant
+        return isIEEE754(value.longValue());
     }
 
     /**
-     * Checks whether the value of {@link Long} matches format IEEE-754
+     * Checks whether the value of {@link Long} looses precision after converting to double precision IEEE754.
      *
      * @param value value which is going to be checked
-     * @return true if value matches format IEEE-754
+     * @return true if value doesn't loose precision after conversion to double precision IEEE-754
      */
-    static boolean isIEEE754(Long value) {
-        return value >= UNSCALED_MIN_VALUE && value <= UNSCALED_MAX_VALUE;
+    public static boolean isIEEE754(Long value) {
+        return value >= MIN_UNSCALED_VALUE && value <= MAX_UNSCALED_VALUE;
     }
 
 

@@ -17,6 +17,7 @@ package org.eclipse.yasson.defaultmapping.basic;
 import org.eclipse.yasson.TestTypeToken;
 import org.eclipse.yasson.defaultmapping.basic.model.BigDecimalInNumber;
 import org.eclipse.yasson.defaultmapping.generics.model.ScalarValueWrapper;
+import org.eclipse.yasson.internal.serializer.BigNumberUtil;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -30,6 +31,10 @@ import javax.json.stream.JsonGenerator;
 import java.io.StringWriter;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Roman Grigoriadi
@@ -37,6 +42,120 @@ import java.math.BigInteger;
 public class NumberTest {
 
     private Jsonb jsonb = JsonbBuilder.create();
+
+    @Test
+    public void testBigDecimal() {
+        assertTrue(BigNumberUtil.isIEEE754(BigDecimal.TEN));
+        //mantissa bit length 53
+        assertTrue(BigNumberUtil.isIEEE754(new BigDecimal("0.1000000000000001")));
+        //mantissa bit length 54
+        assertFalse(BigNumberUtil.isIEEE754(new BigDecimal("0.10000000000000001")));
+        //mantissa bit length 1 exponent in range
+        assertTrue(BigNumberUtil.isIEEE754(new BigDecimal("0.0000000000000000000000001")));
+
+        // Sign: "0"
+        // Exponent: "11111111110"
+        // Mantissa: "00000000000000000000000000000000000000000000000000001"
+        byte[] bits = new byte[8];
+        bits[0] = (byte)0x7f;
+        bits[1] = (byte)0xe0;
+        bits[7] = (byte)0x01;
+
+        Double parsedDouble = ByteBuffer.wrap(bits).getDouble();
+        BigDecimal value = new BigDecimal(parsedDouble.toString());
+        //all in range now
+        assertTrue(BigNumberUtil.isIEEE754(value));
+        //move exponent out of range (mantissa is OK)
+        value = value.multiply(new BigDecimal("10"));
+        assertFalse(BigNumberUtil.isIEEE754(value));
+
+        // Sign: "0"
+        // Exponent: "10000000000"
+        // Mantissa: "11111111111111111111111111111111111111111111111111111"
+        bits = new byte[8];
+        bits[0] = (byte)0x40;
+        bits[1] = (byte)0x0f;
+        bits[2] = (byte)0xff;
+        bits[3] = (byte)0xff;
+        bits[4] = (byte)0xff;
+        bits[5] = (byte)0xff;
+        bits[6] = (byte)0xff;
+        bits[7] = (byte)0xff;
+
+        parsedDouble = ByteBuffer.wrap(bits).getDouble();
+        System.out.println("parsedDouble = " + parsedDouble);
+        value = new BigDecimal(parsedDouble.toString());
+
+        System.out.println("value.fraction bits = " + value.remainder(BigDecimal.ONE).unscaledValue().bitLength());
+        System.out.println("BI bits = " + value.toBigInteger().bitLength());
+        System.out.println("value.unscaledValue().bitLength() = " + value.unscaledValue().bitLength());
+        System.out.println("value = " + value);
+
+        System.out.println(printBytes(bits, "value bits: "));
+        //all in range now
+
+        assertTrue(BigNumberUtil.isIEEE754(value));
+        //move mantissa out of range (exponent OK)
+        value = value.add(BigDecimal.ONE);
+        assertFalse(BigNumberUtil.isIEEE754(value));
+
+
+        //largest unscaled value allowed by 53bit mantissa
+        assertTrue(BigNumberUtil.isIEEE754(new BigDecimal("9007199254740991")));
+        //54bit mantissa
+        assertFalse(BigNumberUtil.isIEEE754(new BigDecimal("9007199254740992")));
+
+        //same for unsigned
+        assertTrue(BigNumberUtil.isIEEE754(new BigDecimal("-9007199254740991")));
+        assertFalse(BigNumberUtil.isIEEE754(new BigDecimal("-9007199254740992")));
+    }
+
+    @Test
+    public void testBigInteger() {
+        assertTrue(BigNumberUtil.isIEEE754(new BigInteger("9007199254740991")));
+        assertFalse(BigNumberUtil.isIEEE754(new BigInteger("9007199254740992")));
+
+        assertTrue(BigNumberUtil.isIEEE754(new BigInteger("-9007199254740991")));
+        assertFalse(BigNumberUtil.isIEEE754(new BigInteger("-9007199254740992")));
+    }
+
+    @Test
+    public void testFromIEEE754() {
+
+        // Sign: "0"
+        // Exponent: "11111111110"
+        // Mantissa: "00000000000000000000000000000000000000000000000000001"
+        byte[] bits = new byte[8];
+        bits[0] = (byte)0x7f;
+        bits[1] = (byte)0xe0;
+        bits[2] = (byte)0x00;
+        bits[3] = (byte)0x00;
+        bits[4] = (byte)0x00;
+        bits[5] = (byte)0x00;
+        bits[6] = (byte)0x00;
+        bits[7] = (byte)0x01;
+
+        System.out.println(printBytes(bits, "bytes"));
+        Double aDouble = ByteBuffer.wrap(bits).getDouble();
+        System.out.println("aDouble = " + aDouble);
+        BigDecimal value = new BigDecimal(aDouble.toString());
+
+        assertTrue(BigNumberUtil.isIEEE754(value));
+        value = value.multiply(new BigDecimal("10"));
+        assertFalse(BigNumberUtil.isIEEE754(value));
+
+
+        System.out.println("new BigDecimal(\"2\").pow(1017) = " + new BigDecimal("2").pow(1017));
+    }
+
+    private String printBytes(byte[] bytes, String message) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(message);
+        for (byte b : bytes) {
+            sb.append(String.format("%8s", Integer.toBinaryString(b & 0xFF)).replace(' ', '0'));
+        }
+        return sb.toString();
+    }
 
     @Test
     public void testSerializeFloat() {
