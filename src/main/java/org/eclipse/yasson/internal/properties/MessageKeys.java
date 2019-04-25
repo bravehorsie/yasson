@@ -86,6 +86,9 @@ public enum MessageKeys {
     MULTIPLE_CONSTRUCTOR_PROPERTIES_CREATORS("multipleConstructorPropertiesCreators"),
     ANNOTATION_NOT_AVAILABLE("annotationNotAvailable"),
     MISSING_VALUE_PROPERTY_IN_ANNOTATION("missingValuePropertyInAnnotation"),
+    INCOMPATIBLE_JSON_VALUE_TYPE_ARRAY("incompatibleJsonValueTypeInArray"),
+    INCOMPATIBLE_JSON_VALUE_TYPE_OBJECT("incompatibleJsonValueTypeInObject"),
+    KEY_NOT_VALID_IN_JSON_ARRAY("keyNotValidInJsonArray"),
     ;
 
     /** Message bundle key. */

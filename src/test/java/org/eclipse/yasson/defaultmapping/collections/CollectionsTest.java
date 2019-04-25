@@ -136,14 +136,14 @@ public class CollectionsTest {
         assertEquals("dequeueSecond", dequeueResult.getLast());
 
         LinkedHashSet<String> linkedHashSet = new LinkedHashSet<>();
-        linkedHashSet.add("setFirst");
-        linkedHashSet.add("setSecond");
-        expected = "[\"setFirst\",\"setSecond\"]";
+        linkedHashSet.add("setStringProperty");
+        linkedHashSet.add("setBigDecimalProperty");
+        expected = "[\"setStringProperty\",\"setBigDecimalProperty\"]";
         assertEquals(expected, jsonb.toJson(linkedHashSet));
         LinkedHashSet<String> linkedHashSetResult = jsonb.fromJson(expected, new TestTypeToken<LinkedHashSet<String>>(){}.getType());
         Iterator<String> iterator = linkedHashSetResult.iterator();
-        assertEquals("setFirst", iterator.next());
-        assertEquals("setSecond", iterator.next());
+        assertEquals("setStringProperty", iterator.next());
+        assertEquals("setBigDecimalProperty", iterator.next());
 
         LinkedList<String> linkedList = new LinkedList<>();
         linkedList.add("listFirst");
